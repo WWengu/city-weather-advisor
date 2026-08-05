@@ -152,6 +152,10 @@
       <div id="clothAdv" class="advice"></div>
     </div>
     <div class="card">
+      <div class="forecast-title">过去 3 天天气回顾</div>
+      <div id="past" class="forecast"></div>
+    </div>
+    <div class="card">
       <div class="forecast-title">未来 3 天预报</div>
       <div id="forecast" class="forecast"></div>
     </div>
@@ -173,7 +177,7 @@
     85:"小阵雪",86:"强阵雪",
     95:"雷暴",96:"雷暴伴冰雹",99:"强雷暴伴冰雹"
   };
-  const DAY_LABEL = ["今天","明天","后天","大后天"];
+  const DAY_LABELS = { "-3":"大前天", "-2":"前天", "-1":"昨天", "0":"今天", "1":"明天", "2":"后天", "3":"大后天" };
 
   const $ = id => document.getElementById(id);
   const btn = $("go");
@@ -216,7 +220,7 @@
 
       const [eRes, wRes] = await Promise.all([
         fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lon}`),
-        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max&forecast_days=4&timezone=auto`)
+        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max&past_days=3&forecast_days=4&timezone=auto`)
       ]);
       const ej = await eRes.json();
       const wj = await wRes.json();
@@ -230,7 +234,11 @@
       $("weather").textContent = WMO[c.weather_code] != null ? WMO[c.weather_code] : "未知";
       $("wind").textContent = c.wind_speed_10m != null ? `${c.wind_speed_10m} km/h` : "—";
 
-      renderForecast(wj.daily);
+      const todayStr = (c.time || "").slice(0, 10);
+      const todayIdx = (wj.daily && wj.daily.time) ? wj.daily.time.indexOf(todayStr) : -1;
+
+      renderPast(wj.daily, todayIdx);
+      renderForecast(wj.daily, todayIdx);
       renderAdvice(c);
       show($("result"));
     } catch(e) {
@@ -243,16 +251,43 @@
   const SEVERE = [95,96,99,65,67,75,82,86]; // 雷暴/冰雹/大雨/强冻雨/大雪/强阵雨/强阵雪
   const CAUTION_POP = 70; // 高降水概率阈值（%）
 
-  function renderForecast(daily) {
+  function renderPast(daily, todayIdx) {
+    const el = $("past");
+    el.innerHTML = "";
+    if(!daily || !daily.time || todayIdx < 3) {
+      el.innerHTML = '<div class="day" style="grid-column:1/-1">暂无历史数据</div>';
+      return;
+    }
+    for(let i = todayIdx - 3; i < todayIdx; i++) {
+      const code = daily.weather_code[i];
+      const wmo = WMO[code] != null ? WMO[code] : "未知";
+      const tmax = daily.temperature_2m_max[i];
+      const tmin = daily.temperature_2m_min[i];
+      const rain = daily.precipitation_sum ? daily.precipitation_sum[i] : null;
+      const wind = daily.wind_speed_10m_max ? daily.wind_speed_10m_max[i] : null;
+      const day = document.createElement("div");
+      day.className = "day";
+      const hasRain = rain != null && rain > 0;
+      day.innerHTML = `
+        <div class="d">${DAY_LABELS[i - todayIdx] || daily.time[i]}</div>
+        <div class="w">${wmo}</div>
+        <div class="t">${tmax != null ? Math.round(tmax) : "—"}° / ${tmin != null ? Math.round(tmin) : "—"}°</div>
+        <div class="meta">${hasRain ? "降水 " + rain + "mm" : ""}${wind != null ? (hasRain ? " · " : "") + "风 " + Math.round(wind) + "km/h" : ""}</div>
+      `;
+      el.appendChild(day);
+    }
+  }
+
+  function renderForecast(daily, todayIdx) {
     const el = $("forecast");
     el.innerHTML = "";
     if(!daily || !daily.time || !daily.time.length) {
       el.innerHTML = '<div class="day" style="grid-column:1/-1">暂无预报数据</div>';
       return;
     }
-    // 取 index 1,2,3（明天、后天、大后天），不足则取可用的
-    const start = 1;
-    const end = Math.min(4, daily.time.length);
+    // 未来 3 天：今天之后的 3 个索引；找不到"今天"时回退为索引 1,2,3
+    const start = todayIdx >= 0 ? todayIdx + 1 : 1;
+    const end = Math.min(todayIdx >= 0 ? todayIdx + 4 : 4, daily.time.length);
     for(let i = start; i < end; i++) {
       const code = daily.weather_code[i];
       const wmo = WMO[code] != null ? WMO[code] : "未知";
@@ -277,7 +312,7 @@
         day.appendChild(b);
       }
       day.insertAdjacentHTML("beforeend", `
-        <div class="d">${DAY_LABEL[i] || daily.time[i]}</div>
+        <div class="d">${DAY_LABELS[i - todayIdx] || daily.time[i]}</div>
         <div class="w">${wmo}</div>
         <div class="t">${tmax != null ? Math.round(tmax) : "—"}° / ${tmin != null ? Math.round(tmin) : "—"}°</div>
         <div class="meta">${pop != null ? '<span class="pop">降水 ' + pop + '%</span>' : ""}${wind != null ? (pop != null ? " · " : "") + "风 " + Math.round(wind) + "km/h" : ""}</div>
