@@ -1,66 +1,134 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="light">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>城市出行小顾问</title>
-<style>
-  :root {
-    --bg: #f5f7fa;
-    --card: #ffffff;
-    --primary: #185FA5;
-    --text: #2C2C2A;
-    --muted: #5F5E5A;
-    --border: #e3e6ea;
-    --good: #0F6E56;
-    --warn: #BA7517;
-    --bad: #A32D2D;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
-    background: var(--bg); color: var(--text); padding: 24px;
-  }
-  .wrap { max-width: 640px; margin: 0 auto; }
-  h1 { font-size: 20px; font-weight: 600; margin: 0 0 4px; }
-  .sub { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
-  .search { display: flex; gap: 8px; }
-  input {
-    flex: 1; padding: 12px 14px; font-size: 15px; border: 1px solid var(--border);
-    border-radius: 10px; outline: none;
-  }
-  input:focus { border-color: var(--primary); }
-  button {
-    padding: 12px 18px; font-size: 15px; color: #fff; background: var(--primary);
-    border: none; border-radius: 10px; cursor: pointer;
-  }
-  button:disabled { opacity: .6; cursor: default; }
-  .card {
-    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
-    padding: 20px; margin-top: 16px;
-  }
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .item { background: #f7f9fc; border-radius: 10px; padding: 12px 14px; }
-  .item .k { font-size: 12px; color: var(--muted); }
-  .item .v { font-size: 18px; font-weight: 600; margin-top: 4px; }
-  .advice { margin-top: 14px; padding: 14px; border-radius: 10px; font-size: 14px; line-height: 1.6; }
-  .advice.go { background: #E1F5EE; color: var(--good); }
-  .advice.caution { background: #FAEEDA; color: var(--warn); }
-  .advice.no { background: #FCEBEB; color: var(--bad); }
-  .advice b { font-weight: 600; }
-  .err { color: var(--bad); margin-top: 12px; font-size: 14px; }
-  .place { font-size: 14px; color: var(--muted); margin-bottom: 6px; }
-  .hidden { display: none; }
-  .spin { font-size: 13px; color: var(--muted); margin-top: 12px; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>城市出行小顾问</title>
+  <script>
+    // 提前设置主题，避免首屏闪烁
+    (function(){
+      try {
+        var saved = localStorage.getItem("cwa-theme");
+        if(saved === "dark" || saved === "light") {
+          document.documentElement.setAttribute("data-theme", saved);
+        } else if(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+          document.documentElement.setAttribute("data-theme", "dark");
+        }
+      } catch(e){}
+    })();
+  </script>
+  <style>
+    :root {
+      --bg: #f5f7fa;
+      --card: #ffffff;
+      --card-alt: #f7f9fc;
+      --primary: #185FA5;
+      --primary-hover: #144e89;
+      --text: #2C2C2A;
+      --muted: #5F5E5A;
+      --border: #e3e6ea;
+      --good: #0F6E56;
+      --warn: #BA7517;
+      --bad: #A32D2D;
+      --good-bg: #E1F5EE;
+      --warn-bg: #FAEEDA;
+      --bad-bg: #FCEBEB;
+      --toggle-bg: #e9eef5;
+      --toggle-text: #2C2C2A;
+      color-scheme: light;
+    }
+    [data-theme="dark"] {
+      --bg: #0f1115;
+      --card: #1a1d23;
+      --card-alt: #232730;
+      --primary: #4d9eff;
+      --primary-hover: #6cb1ff;
+      --text: #e8e8e8;
+      --muted: #9aa0a6;
+      --border: #2c313a;
+      --good: #4ade80;
+      --warn: #fbbf24;
+      --bad: #f87171;
+      --good-bg: rgba(74,222,128,.18);
+      --warn-bg: rgba(251,191,36,.18);
+      --bad-bg: rgba(248,113,113,.18);
+      --toggle-bg: #2c313a;
+      --toggle-text: #e8e8e8;
+      color-scheme: dark;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg); color: var(--text); padding: 24px;
+      transition: background-color .25s ease, color .25s ease;
+    }
+    .wrap { max-width: 640px; margin: 0 auto; }
+    .header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+    h1 { font-size: 20px; font-weight: 600; margin: 0; }
+    .sub { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+    .toggle {
+      background: var(--toggle-bg); color: var(--toggle-text); border: 1px solid var(--border);
+      border-radius: 999px; padding: 6px 12px; font-size: 13px; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+      font-family: inherit;
+    }
+    .toggle:hover { border-color: var(--primary); }
+    .search { display: flex; gap: 8px; }
+    input {
+      flex: 1; padding: 12px 14px; font-size: 15px; border: 1px solid var(--border);
+      border-radius: 10px; outline: none; background: var(--card); color: var(--text);
+      font-family: inherit;
+      transition: border-color .2s ease, background-color .25s ease;
+    }
+    input:focus { border-color: var(--primary); }
+    button.primary {
+      padding: 12px 18px; font-size: 15px; color: #fff; background: var(--primary);
+      border: none; border-radius: 10px; cursor: pointer; font-family: inherit;
+      transition: background-color .2s ease;
+    }
+    button.primary:hover:not(:disabled) { background: var(--primary-hover); }
+    button.primary:disabled { opacity: .6; cursor: default; }
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+      padding: 20px; margin-top: 16px;
+      transition: background-color .25s ease, border-color .25s ease;
+    }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .item { background: var(--card-alt); border-radius: 10px; padding: 12px 14px; }
+    .item .k { font-size: 12px; color: var(--muted); }
+    .item .v { font-size: 18px; font-weight: 600; margin-top: 4px; }
+    .advice { margin-top: 14px; padding: 14px; border-radius: 10px; font-size: 14px; line-height: 1.6; }
+    .advice.go { background: var(--good-bg); color: var(--good); }
+    .advice.caution { background: var(--warn-bg); color: var(--warn); }
+    .advice.no { background: var(--bad-bg); color: var(--bad); }
+    .advice b { font-weight: 600; }
+    .err { color: var(--bad); margin-top: 12px; font-size: 14px; }
+    .place { font-size: 14px; color: var(--muted); margin-bottom: 6px; }
+    .hidden { display: none; }
+    .spin { font-size: 13px; color: var(--muted); margin-top: 12px; }
+    .forecast-title { font-size: 14px; font-weight: 600; margin: 0 0 10px; color: var(--text); }
+    .forecast { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .day { background: var(--card-alt); border-radius: 10px; padding: 12px; text-align: center; }
+    .day .d { font-size: 12px; color: var(--muted); }
+    .day .w { font-size: 14px; font-weight: 600; margin: 6px 0; color: var(--text); }
+    .day .t { font-size: 13px; color: var(--text); }
+    .day .meta { font-size: 11px; color: var(--muted); margin-top: 4px; }
+    .day .pop { color: var(--primary); font-weight: 600; }
+    @media (max-width: 480px) {
+      .forecast { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>城市出行小顾问</h1>
-  <div class="sub">输入一个城市（精确到市），自动查海拔、温湿度、天气，并给出出行与穿衣建议</div>
+  <div class="header">
+    <h1>城市出行小顾问</h1>
+    <button id="themeBtn" class="toggle" type="button" aria-label="切换主题">🌙 深色</button>
+  </div>
+  <div class="sub">输入一个城市（精确到市），自动查海拔、温湿度、天气、未来三天预报，并给出出行与穿衣建议</div>
   <div class="search">
     <input id="city" placeholder="例如：广州市 / 北京市 / 成都市" />
-    <button id="go">查询</button>
+    <button id="go" class="primary">查询</button>
   </div>
   <div id="status" class="spin hidden">查询中…</div>
   <div id="err" class="err hidden"></div>
@@ -77,6 +145,10 @@
       </div>
       <div id="goAdv" class="advice"></div>
       <div id="clothAdv" class="advice"></div>
+    </div>
+    <div class="card">
+      <div class="forecast-title">未来 3 天预报</div>
+      <div id="forecast" class="forecast"></div>
     </div>
   </div>
   <div style="margin-top:16px;font-size:12px;color:var(--muted)">
@@ -96,11 +168,25 @@
     85:"小阵雪",86:"强阵雪",
     95:"雷暴",96:"雷暴伴冰雹",99:"强雷暴伴冰雹"
   };
+  const DAY_LABEL = ["今天","明天","后天","大后天"];
 
   const $ = id => document.getElementById(id);
   const btn = $("go");
   btn.addEventListener("click", run);
   $("city").addEventListener("keydown", e => { if(e.key==="Enter") run(); });
+
+  // 主题：根据当前 data-theme 更新按钮文案
+  (function syncToggle(){
+    const cur = document.documentElement.getAttribute("data-theme") || "light";
+    $("themeBtn").textContent = cur === "dark" ? "☀️ 浅色" : "🌙 深色";
+  })();
+  $("themeBtn").addEventListener("click", () => {
+    const cur = document.documentElement.getAttribute("data-theme") || "light";
+    const next = cur === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    $("themeBtn").textContent = next === "dark" ? "☀️ 浅色" : "🌙 深色";
+    try { localStorage.setItem("cwa-theme", next); } catch(e){}
+  });
 
   async function geocode(name) {
     const g = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=1&language=zh&format=json`);
@@ -114,10 +200,10 @@
     hide($("result")); hide($("err")); show($("status"));
     btn.disabled = true;
     try {
-      let r = await geocode(raw);
+      let r = await geocode(name);
       if(!r) {
-        const alt = raw.replace(/(市|省|县|区|自治州|盟)$/,"");
-        if(alt !== raw) r = await geocode(alt);
+        const alt = name.replace(/(市|省|县|区|自治州|盟)$/,"");
+        if(alt !== name) r = await geocode(alt);
       }
       if(!r) throw new Error("没找到这个城市，换个写法试试（比如输入「广州」而不是「广州市」）");
       const lat = r.latitude, lon = r.longitude;
@@ -125,7 +211,7 @@
 
       const [eRes, wRes] = await Promise.all([
         fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lon}`),
-        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m&timezone=auto`)
+        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max&forecast_days=4&timezone=auto`)
       ]);
       const ej = await eRes.json();
       const wj = await wRes.json();
@@ -139,12 +225,42 @@
       $("weather").textContent = WMO[c.weather_code] != null ? WMO[c.weather_code] : "未知";
       $("wind").textContent = c.wind_speed_10m != null ? `${c.wind_speed_10m} km/h` : "—";
 
+      renderForecast(wj.daily);
       renderAdvice(c);
       show($("result"));
     } catch(e) {
       showErr(e.message || "查询失败，请稍后再试");
     } finally {
       hide($("status")); btn.disabled = false;
+    }
+  }
+
+  function renderForecast(daily) {
+    const el = $("forecast");
+    el.innerHTML = "";
+    if(!daily || !daily.time || !daily.time.length) {
+      el.innerHTML = '<div class="day" style="grid-column:1/-1">暂无预报数据</div>';
+      return;
+    }
+    // 取 index 1,2,3（明天、后天、大后天），不足则取可用的
+    const start = 1;
+    const end = Math.min(4, daily.time.length);
+    for(let i = start; i < end; i++) {
+      const code = daily.weather_code[i];
+      const wmo = WMO[code] != null ? WMO[code] : "未知";
+      const tmax = daily.temperature_2m_max[i];
+      const tmin = daily.temperature_2m_min[i];
+      const pop = daily.precipitation_probability_max ? daily.precipitation_probability_max[i] : null;
+      const wind = daily.wind_speed_10m_max ? daily.wind_speed_10m_max[i] : null;
+      const day = document.createElement("div");
+      day.className = "day";
+      day.innerHTML = `
+        <div class="d">${DAY_LABEL[i] || daily.time[i]}</div>
+        <div class="w">${wmo}</div>
+        <div class="t">${tmax != null ? Math.round(tmax) : "—"}° / ${tmin != null ? Math.round(tmin) : "—"}°</div>
+        <div class="meta">${pop != null ? '<span class="pop">降水 ' + pop + '%</span>' : ""}${wind != null ? (pop != null ? " · " : "") + "风 " + Math.round(wind) + "km/h" : ""}</div>
+      `;
+      el.appendChild(day);
     }
   }
 
