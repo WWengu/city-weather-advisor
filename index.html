@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>城市出行小顾问</title>
+<style>
+  :root {
+    --bg: #f5f7fa;
+    --card: #ffffff;
+    --primary: #185FA5;
+    --text: #2C2C2A;
+    --muted: #5F5E5A;
+    --border: #e3e6ea;
+    --good: #0F6E56;
+    --warn: #BA7517;
+    --bad: #A32D2D;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--text); padding: 24px;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; }
+  h1 { font-size: 20px; font-weight: 600; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+  .search { display: flex; gap: 8px; }
+  input {
+    flex: 1; padding: 12px 14px; font-size: 15px; border: 1px solid var(--border);
+    border-radius: 10px; outline: none;
+  }
+  input:focus { border-color: var(--primary); }
+  button {
+    padding: 12px 18px; font-size: 15px; color: #fff; background: var(--primary);
+    border: none; border-radius: 10px; cursor: pointer;
+  }
+  button:disabled { opacity: .6; cursor: default; }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 20px; margin-top: 16px;
+  }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .item { background: #f7f9fc; border-radius: 10px; padding: 12px 14px; }
+  .item .k { font-size: 12px; color: var(--muted); }
+  .item .v { font-size: 18px; font-weight: 600; margin-top: 4px; }
+  .advice { margin-top: 14px; padding: 14px; border-radius: 10px; font-size: 14px; line-height: 1.6; }
+  .advice.go { background: #E1F5EE; color: var(--good); }
+  .advice.caution { background: #FAEEDA; color: var(--warn); }
+  .advice.no { background: #FCEBEB; color: var(--bad); }
+  .advice b { font-weight: 600; }
+  .err { color: var(--bad); margin-top: 12px; font-size: 14px; }
+  .place { font-size: 14px; color: var(--muted); margin-bottom: 6px; }
+  .hidden { display: none; }
+  .spin { font-size: 13px; color: var(--muted); margin-top: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>城市出行小顾问</h1>
+  <div class="sub">输入一个城市（精确到市），自动查海拔、温湿度、天气，并给出出行与穿衣建议</div>
+  <div class="search">
+    <input id="city" placeholder="例如：广州市 / 北京市 / 成都市" />
+    <button id="go">查询</button>
+  </div>
+  <div id="status" class="spin hidden">查询中…</div>
+  <div id="err" class="err hidden"></div>
+  <div id="result" class="hidden">
+    <div class="card">
+      <div class="place" id="place"></div>
+      <div class="grid">
+        <div class="item"><div class="k">海拔</div><div class="v" id="elev"></div></div>
+        <div class="item"><div class="k">气温</div><div class="v" id="temp"></div></div>
+        <div class="item"><div class="k">体感温度</div><div class="v" id="feel"></div></div>
+        <div class="item"><div class="k">相对湿度</div><div class="v" id="humid"></div></div>
+        <div class="item"><div class="k">天气</div><div class="v" id="weather"></div></div>
+        <div class="item"><div class="k">风速</div><div class="v" id="wind"></div></div>
+      </div>
+      <div id="goAdv" class="advice"></div>
+      <div id="clothAdv" class="advice"></div>
+    </div>
+  </div>
+  <div style="margin-top:16px;font-size:12px;color:var(--muted)">
+    数据来源：Open-Meteo（免费、无需密钥）
+  </div>
+</div>
+<script>
+  const WMO = {
+    0:"晴",1:"大致晴朗",2:"局部多云",3:"阴",
+    45:"雾",48:"雾凇",
+    51:"小毛毛雨",53:"毛毛雨",55:"大毛毛雨",
+    56:"冻毛毛雨",57:"冻毛毛雨",
+    61:"小雨",63:"中雨",65:"大雨",
+    66:"冻雨",67:"强冻雨",
+    71:"小雪",73:"中雪",75:"大雪",77:"雪粒",
+    80:"小阵雨",81:"阵雨",82:"强阵雨",
+    85:"小阵雪",86:"强阵雪",
+    95:"雷暴",96:"雷暴伴冰雹",99:"强雷暴伴冰雹"
+  };
+
+  const $ = id => document.getElementById(id);
+  const btn = $("go");
+  btn.addEventListener("click", run);
+  $("city").addEventListener("keydown", e => { if(e.key==="Enter") run(); });
+
+  async function geocode(name) {
+    const g = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=1&language=zh&format=json`);
+    const gj = await g.json();
+    return (gj.results && gj.results.length) ? gj.results[0] : null;
+  }
+
+  async function run() {
+    const name = $("city").value.trim();
+    if(!name) { showErr("请输入城市名"); return; }
+    hide($("result")); hide($("err")); show($("status"));
+    btn.disabled = true;
+    try {
+      let r = await geocode(raw);
+      if(!r) {
+        const alt = raw.replace(/(市|省|县|区|自治州|盟)$/,"");
+        if(alt !== raw) r = await geocode(alt);
+      }
+      if(!r) throw new Error("没找到这个城市，换个写法试试（比如输入「广州」而不是「广州市」）");
+      const lat = r.latitude, lon = r.longitude;
+      $("place").textContent = `${r.name} · ${r.admin1 || ""} · ${r.country || ""}`;
+
+      const [eRes, wRes] = await Promise.all([
+        fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lon}`),
+        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m&timezone=auto`)
+      ]);
+      const ej = await eRes.json();
+      const wj = await wRes.json();
+      const elev = ej.elevation ? ej.elevation[0] : null;
+      const c = wj.current;
+
+      $("elev").textContent = elev != null ? `${Math.round(elev)} m` : "—";
+      $("temp").textContent = c.temperature_2m != null ? `${c.temperature_2m}°C` : "—";
+      $("feel").textContent = c.apparent_temperature != null ? `${c.apparent_temperature}°C` : "—";
+      $("humid").textContent = c.relative_humidity_2m != null ? `${c.relative_humidity_2m}%` : "—";
+      $("weather").textContent = WMO[c.weather_code] != null ? WMO[c.weather_code] : "未知";
+      $("wind").textContent = c.wind_speed_10m != null ? `${c.wind_speed_10m} km/h` : "—";
+
+      renderAdvice(c);
+      show($("result"));
+    } catch(e) {
+      showErr(e.message || "查询失败，请稍后再试");
+    } finally {
+      hide($("status")); btn.disabled = false;
+    }
+  }
+
+  function renderAdvice(c) {
+    const code = c.weather_code;
+    const feel = c.apparent_temperature;
+    const wind = c.wind_speed_10m;
+    const rain = [51,53,55,56,57,61,63,65,66,67,71,73,75,77,80,81,82,85,86];
+    const bad = [95,96,99,82,86,65,75];
+
+    let goCls, goText;
+    if(bad.includes(code)) {
+      goCls="no"; goText="<b>不建议外出</b>：有雷暴或强降水/降雪，注意安全，尽量待在室内。";
+    } else if(rain.includes(code)) {
+      goCls="caution"; goText="<b>谨慎外出</b>：有雨雪，记得带伞/雨具，路面湿滑慢行。";
+    } else if(feel != null && (feel < 2 || feel > 36)) {
+      goCls="caution"; goText = feel < 2
+        ? "<b>谨慎外出</b>：体感很冷，注意保暖防滑。"
+        : "<b>谨慎外出</b>：体感很热，避开正午、多补水防晒。";
+    } else if(wind != null && wind > 30) {
+      goCls="caution"; goText="<b>可外出，但注意防风</b>：风力较大，户外注意固定物品。";
+    } else {
+      goCls="go"; goText="<b>适合外出</b>：天气不错，放心出去玩吧！";
+    }
+    const ga = $("goAdv"); ga.className = "advice " + goCls; ga.innerHTML = goText;
+
+    let cloth;
+    if(feel == null) cloth = "暂无温度数据，无法给出穿衣建议。";
+    else if(feel >= 30) cloth = "<b>穿：</b>短袖、短裤等清凉衣物，做好防晒、多喝水。";
+    else if(feel >= 24) cloth = "<b>穿：</b>短袖或薄长袖，体感舒适。";
+    else if(feel >= 18) cloth = "<b>穿：</b>长袖衬衫或薄外套，早晚微凉可加一件。";
+    else if(feel >= 12) cloth = "<b>穿：</b>外套或卫衣，注意保暖。";
+    else if(feel >= 5) cloth = "<b>穿：</b>厚外套/毛衣，天气偏冷。";
+    else cloth = "<b>穿：</b>羽绒服或厚棉衣，注意保暖防风。";
+    if(rain.includes(code)) cloth += " 记得带伞。";
+    const ca = $("clothAdv"); ca.className = "advice caution"; ca.innerHTML = cloth;
+  }
+
+  function show(el){ el.classList.remove("hidden"); }
+  function hide(el){ el.classList.add("hidden"); }
+  function showErr(m){ const e = $("err"); e.textContent = m; show(e); }
+</script>
+</body>
+</html>
