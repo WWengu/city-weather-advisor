@@ -114,6 +114,11 @@
     .day .t { font-size: 13px; color: var(--text); }
     .day .meta { font-size: 11px; color: var(--muted); margin-top: 4px; }
     .day .pop { color: var(--primary); font-weight: 600; }
+    .day.severe { border: 2px solid var(--bad); background: var(--bad-bg); }
+    .day.caution { border: 2px solid var(--warn); background: var(--warn-bg); }
+    .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; margin-bottom: 6px; }
+    .badge.sev { background: var(--bad); color: #fff; }
+    .badge.warn { background: var(--warn); color: #fff; }
     @media (max-width: 480px) {
       .forecast { grid-template-columns: 1fr; }
     }
@@ -235,6 +240,9 @@
     }
   }
 
+  const SEVERE = [95,96,99,65,67,75,82,86]; // 雷暴/冰雹/大雨/强冻雨/大雪/强阵雨/强阵雪
+  const CAUTION_POP = 70; // 高降水概率阈值（%）
+
   function renderForecast(daily) {
     const el = $("forecast");
     el.innerHTML = "";
@@ -252,14 +260,28 @@
       const tmin = daily.temperature_2m_min[i];
       const pop = daily.precipitation_probability_max ? daily.precipitation_probability_max[i] : null;
       const wind = daily.wind_speed_10m_max ? daily.wind_speed_10m_max[i] : null;
+      const severe = SEVERE.includes(code);
+      const caution = !severe && pop != null && pop >= CAUTION_POP;
+
       const day = document.createElement("div");
-      day.className = "day";
-      day.innerHTML = `
+      day.className = "day" + (severe ? " severe" : caution ? " caution" : "");
+      if(severe) {
+        const b = document.createElement("div");
+        b.className = "badge sev";
+        b.textContent = "⚠️ 严重天气";
+        day.appendChild(b);
+      } else if(caution) {
+        const b = document.createElement("div");
+        b.className = "badge warn";
+        b.textContent = "☔ 高降水概率";
+        day.appendChild(b);
+      }
+      day.insertAdjacentHTML("beforeend", `
         <div class="d">${DAY_LABEL[i] || daily.time[i]}</div>
         <div class="w">${wmo}</div>
         <div class="t">${tmax != null ? Math.round(tmax) : "—"}° / ${tmin != null ? Math.round(tmin) : "—"}°</div>
         <div class="meta">${pop != null ? '<span class="pop">降水 ' + pop + '%</span>' : ""}${wind != null ? (pop != null ? " · " : "") + "风 " + Math.round(wind) + "km/h" : ""}</div>
-      `;
+      `);
       el.appendChild(day);
     }
   }
