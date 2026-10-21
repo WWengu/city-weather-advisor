@@ -18,109 +18,185 @@
     })();
   </script>
   <style>
-    :root {
-      --bg: #f5f7fa;
-      --card: #ffffff;
-      --card-alt: #f7f9fc;
-      --primary: #185FA5;
-      --primary-hover: #144e89;
-      --text: #2C2C2A;
-      --muted: #5F5E5A;
-      --border: #e3e6ea;
-      --good: #0F6E56;
-      --warn: #BA7517;
-      --bad: #A32D2D;
-      --good-bg: #E1F5EE;
-      --warn-bg: #FAEEDA;
-      --bad-bg: #FCEBEB;
-      --toggle-bg: #e9eef5;
-      --toggle-text: #2C2C2A;
+    /* ===== 1. 设计 token ===== */
+    /* 浅色：沿用旧版清爽观感（蓝主色 + 蓝灰底）；深色：新版中性风 */
+    :root{
+      --bg:#f5f7fa;            /* 页面底（偏蓝冷灰） */
+      --surface:#ffffff;       /* 卡片 */
+      --surface-2:#f7f9fc;     /* 卡片内次级块 */
+      --text:#2c2c2a;          /* 主文字 */
+      --text-2:#5f5e5a;        /* 次级文字 */
+      --text-3:#a1a1aa;        /* 提示 / 占位 */
+      --border:#e3e6ea;        /* 描边 */
+      --primary:#185FA5;       /* 主按钮底（旧版蓝） */
+      --primary-text:#ffffff;  /* 主按钮字 */
+      --primary-hover:#144e89;
+      --accent:#185FA5;        /* 聚焦 / 链接 */
+      --good:#0F6E56;  --good-bg:#E1F5EE;  --good-line:#0F6E56;
+      --warn:#BA7517;  --warn-bg:#FAEEDA;  --warn-line:#BA7517;
+      --bad:#A32D2D;   --bad-bg:#FCEBEB;   --bad-line:#A32D2D;
+
+      --radius-sm:6px; --radius:8px; --radius-lg:14px; --radius-full:999px;
+      --shadow-1:none;         /* 浅色靠描边分层，不加阴影 */
+      --shadow-2:0 4px 16px rgba(0,0,0,.08);
+      --dur:150ms; --ease:cubic-bezier(.4,0,.2,1);
       color-scheme: light;
     }
-    [data-theme="dark"] {
-      --bg: #0f1115;
-      --card: #1a1d23;
-      --card-alt: #232730;
-      --primary: #4d9eff;
-      --primary-hover: #6cb1ff;
-      --text: #e8e8e8;
-      --muted: #9aa0a6;
-      --border: #2c313a;
-      --good: #4ade80;
-      --warn: #fbbf24;
-      --bad: #f87171;
-      --good-bg: rgba(74,222,128,.18);
-      --warn-bg: rgba(251,191,36,.18);
-      --bad-bg: rgba(248,113,113,.18);
-      --toggle-bg: #2c313a;
-      --toggle-text: #e8e8e8;
+    [data-theme="dark"]{
+      --bg:#09090b;
+      --surface:#18181b;
+      --surface-2:#27272a;
+      --text:#fafafa;
+      --text-2:#a1a1aa;
+      --text-3:#71717a;
+      --border:#27272a;
+      --primary:#fafafa;
+      --primary-text:#18181b;
+      --primary-hover:#e4e4e7;
+      --accent:#60a5fa;
+      --good:#86efac; --good-bg:rgba(22,163,74,.14);  --good-line:#4ade80;
+      --warn:#fcd34d; --warn-bg:rgba(217,119,6,.16);  --warn-line:#fbbf24;
+      --bad:#fca5a5;  --bad-bg:rgba(220,38,38,.16);   --bad-line:#f87171;
+      --shadow-1:0 1px 2px rgba(0,0,0,.3);
+      --shadow-2:0 4px 16px rgba(0,0,0,.45);
       color-scheme: dark;
     }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
-      background: var(--bg); color: var(--text); padding: 24px;
-      transition: background-color .25s ease, color .25s ease;
+
+    /* ===== 2. 基础 ===== */
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;
+      background:var(--bg); color:var(--text);
+      padding:32px 24px 40px; font-size:14px; line-height:1.6;
+      -webkit-font-smoothing:antialiased;
+      transition:background-color var(--dur) var(--ease), color var(--dur) var(--ease);
     }
-    .wrap { max-width: 640px; margin: 0 auto; }
-    .header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
-    h1 { font-size: 20px; font-weight: 600; margin: 0; }
-    .sub { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
-    .toggle {
-      background: var(--toggle-bg); color: var(--toggle-text); border: 1px solid var(--border);
-      border-radius: 999px; padding: 6px 12px; font-size: 13px; cursor: pointer;
-      display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
-      font-family: inherit;
+    .wrap{ max-width:680px; margin:0 auto; }
+
+    /* ===== 3. 页头 ===== */
+    .header{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
+    h1{ font-size:22px; font-weight:500; margin:0; letter-spacing:-.01em; }
+    .sub{ color:var(--text-2); font-size:13px; margin:6px 0 24px; max-width:52ch; }
+    .toggle{
+      background:var(--surface); color:var(--text-2); border:1px solid var(--border);
+      border-radius:var(--radius-full); padding:6px 12px; font-size:13px; cursor:pointer;
+      display:inline-flex; align-items:center; gap:6px; white-space:nowrap; font-family:inherit;
+      transition:border-color var(--dur) var(--ease), color var(--dur) var(--ease), background-color var(--dur) var(--ease);
     }
-    .toggle:hover { border-color: var(--primary); }
-    .search { display: flex; gap: 8px; }
-    input {
-      flex: 1; padding: 12px 14px; font-size: 15px; border: 1px solid var(--border);
-      border-radius: 10px; outline: none; background: var(--card); color: var(--text);
-      font-family: inherit;
-      transition: border-color .2s ease, background-color .25s ease;
+    .toggle:hover{ border-color:var(--text-3); color:var(--text); }
+    .toggle svg{ width:15px; height:15px; }
+
+    /* ===== 4. 搜索区 ===== */
+    .search{ display:flex; gap:8px; }
+    input{
+      flex:1; min-width:0; height:40px; padding:0 14px; font-size:15px;
+      border:1px solid var(--border); border-radius:var(--radius); outline:none;
+      background:var(--surface); color:var(--text); font-family:inherit;
+      transition:border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
     }
-    input:focus { border-color: var(--primary); }
-    button.primary {
-      padding: 12px 18px; font-size: 15px; color: #fff; background: var(--primary);
-      border: none; border-radius: 10px; cursor: pointer; font-family: inherit;
-      transition: background-color .2s ease;
+    input::placeholder{ color:var(--text-3); }
+    input:focus{ border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
+    button.primary{
+      height:40px; padding:0 20px; font-size:15px; color:var(--primary-text); background:var(--primary);
+      border:1px solid var(--primary); border-radius:var(--radius); cursor:pointer; font-family:inherit;
+      display:inline-flex; align-items:center; gap:6px;
+      transition:background-color var(--dur) var(--ease), border-color var(--dur) var(--ease);
     }
-    button.primary:hover:not(:disabled) { background: var(--primary-hover); }
-    button.primary:disabled { opacity: .6; cursor: default; }
-    .card {
-      background: var(--card); border: 1px solid var(--border); border-radius: 14px;
-      padding: 20px; margin-top: 16px;
-      transition: background-color .25s ease, border-color .25s ease;
+    button.primary:hover:not(:disabled){ background:var(--primary-hover); border-color:var(--primary-hover); }
+    button.primary:disabled{ opacity:.5; cursor:default; }
+    button.primary svg{ width:16px; height:16px; }
+
+    /* ===== 5. 卡片 ===== */
+    .card{
+      background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);
+      padding:20px; margin-top:16px; box-shadow:var(--shadow-1);
+      transition:background-color var(--dur) var(--ease), border-color var(--dur) var(--ease);
     }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .item { background: var(--card-alt); border-radius: 10px; padding: 12px 14px; }
-    .item .k { font-size: 12px; color: var(--muted); }
-    .item .v { font-size: 18px; font-weight: 600; margin-top: 4px; }
-    .advice { margin-top: 14px; padding: 14px; border-radius: 10px; font-size: 14px; line-height: 1.6; }
-    .advice.go { background: var(--good-bg); color: var(--good); }
-    .advice.caution { background: var(--warn-bg); color: var(--warn); }
-    .advice.no { background: var(--bad-bg); color: var(--bad); }
-    .advice b { font-weight: 600; }
-    .err { color: var(--bad); margin-top: 12px; font-size: 14px; }
-    .place { font-size: 14px; color: var(--muted); margin-bottom: 6px; }
-    .hidden { display: none; }
-    .spin { font-size: 13px; color: var(--muted); margin-top: 12px; }
-    .forecast-title { font-size: 14px; font-weight: 600; margin: 0 0 10px; color: var(--text); }
-    .forecast { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-    .day { background: var(--card-alt); border-radius: 10px; padding: 12px; text-align: center; }
-    .day .d { font-size: 12px; color: var(--muted); }
-    .day .w { font-size: 14px; font-weight: 600; margin: 6px 0; color: var(--text); }
-    .day .t { font-size: 13px; color: var(--text); }
-    .day .meta { font-size: 11px; color: var(--muted); margin-top: 4px; }
-    .day .pop { color: var(--primary); font-weight: 600; }
-    .day.severe { border: 2px solid var(--bad); background: var(--bad-bg); }
-    .day.caution { border: 2px solid var(--warn); background: var(--warn-bg); }
-    .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; margin-bottom: 6px; }
-    .badge.sev { background: var(--bad); color: #fff; }
-    .badge.warn { background: var(--warn); color: #fff; }
-    @media (max-width: 480px) {
-      .forecast { grid-template-columns: 1fr; }
+    .card-title{
+      font-size:13px; font-weight:500; color:var(--text-2);
+      margin:0 0 14px; display:flex; align-items:center; gap:6px;
+    }
+    .place{ font-size:13px; color:var(--text-2); margin-bottom:16px; }
+
+    /* ===== 6. 指标网格 ===== */
+    .grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+    .item{ background:var(--surface-2); border-radius:var(--radius); padding:12px 14px; }
+    .item .k{ font-size:12px; color:var(--text-3); }
+    .item .v{
+      font-size:19px; font-weight:500; margin-top:2px; letter-spacing:-.01em;
+      font-variant-numeric:tabular-nums;
+    }
+
+    /* ===== 7. 建议（左侧色条 alert） ===== */
+    .advice{
+      margin-top:12px; padding:12px 14px; border-radius:var(--radius);
+      font-size:14px; line-height:1.6; border-left:3px solid var(--border);
+      background:var(--surface-2); color:var(--text);
+    }
+    .advice.go{ background:var(--good-bg); border-left-color:var(--good-line); }
+    .advice.caution{ background:var(--warn-bg); border-left-color:var(--warn-line); }
+    .advice.no{ background:var(--bad-bg); border-left-color:var(--bad-line); }
+    .advice b{ font-weight:500; }
+
+    /* ===== 8. 预报 / 回顾 ===== */
+    .forecast{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+    .day{
+      background:var(--surface-2); border:1px solid transparent; border-radius:var(--radius);
+      padding:12px 10px; text-align:center;
+    }
+    .day .d{ font-size:12px; color:var(--text-3); }
+    .day .w{ font-size:14px; font-weight:500; margin:4px 0 2px; color:var(--text); }
+    .day .t{ font-size:13px; color:var(--text-2); font-variant-numeric:tabular-nums; }
+    .day .meta{ font-size:11px; color:var(--text-3); margin-top:4px; }
+    .day .pop{ color:var(--accent); font-weight:500; }
+    .day.severe{ border-color:var(--bad-line); background:var(--bad-bg); }
+    .day.caution{ border-color:var(--warn-line); background:var(--warn-bg); }
+    .badge{
+      display:inline-flex; align-items:center; gap:4px;
+      font-size:11px; font-weight:500; padding:2px 8px;
+      border-radius:var(--radius-full); margin-bottom:6px;
+    }
+    .badge svg{ width:12px; height:12px; }
+    .badge.sev{ background:var(--bad-line); color:#fff; }
+    .badge.warn{ background:var(--warn-line); color:#fff; }
+
+    /* ===== 9. 状态：加载 / 错误 / 空 ===== */
+    .spin{ margin-top:16px; display:grid; gap:10px; }
+    .sk{ height:96px; border-radius:var(--radius-lg); background:var(--surface); border:1px solid var(--border); }
+    .empty{
+      grid-column:1/-1; text-align:center; padding:20px 12px; font-size:13px; color:var(--text-3);
+      border:1px dashed var(--border); border-radius:var(--radius); background:transparent;
+    }
+    .err{
+      margin-top:16px; font-size:13px; color:var(--text);
+      background:var(--bad-bg); border-left:3px solid var(--bad-line);
+      border-radius:var(--radius); padding:12px 14px;
+    }
+    .foot{
+      margin-top:20px; padding-top:16px; border-top:1px solid var(--border);
+      font-size:12px; color:var(--text-3);
+    }
+    .hidden{ display:none; }
+
+    /* ===== 10. 入场动画（可降级） ===== */
+    @keyframes rise{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:none; } }
+    @keyframes pulse{ 0%,100%{ opacity:1; } 50%{ opacity:.55; } }
+    @media (prefers-reduced-motion: no-preference){
+      .reveal{ animation:rise var(--dur) var(--ease) both; }
+      .sk{ animation:pulse 1.4s ease-in-out infinite; }
+    }
+
+    /* ===== 11. 窄屏 ===== */
+    @media (max-width:560px){
+      body{ padding:24px 16px 32px; }
+      h1{ font-size:20px; }
+      .grid{ grid-template-columns:repeat(2,1fr); }
+      .item .v{ font-size:17px; }
+      .forecast{ gap:8px; }
+      .day{ padding:10px 6px; }
+      .search{ flex-wrap:nowrap; }
+      button.primary{ padding:0 16px; }
     }
   </style>
 </head>
@@ -128,17 +204,20 @@
 <div class="wrap">
   <div class="header">
     <h1>城市出行小顾问</h1>
-    <button id="themeBtn" class="toggle" type="button" aria-label="切换主题">🌙 深色</button>
+    <button id="themeBtn" class="toggle" type="button" aria-label="切换主题"></button>
   </div>
   <div class="sub">输入一个城市（精确到市），自动查海拔、温湿度、天气、未来三天预报，并给出出行与穿衣建议</div>
   <div class="search">
     <input id="city" placeholder="例如：广州市 / 北京市 / 成都市" />
-    <button id="go" class="primary">查询</button>
+    <button id="go" class="primary">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      查询
+    </button>
   </div>
-  <div id="status" class="spin hidden">查询中…</div>
+  <div id="status" class="spin hidden"><div class="sk"></div><div class="sk"></div></div>
   <div id="err" class="err hidden"></div>
   <div id="result" class="hidden">
-    <div class="card">
+    <div class="card reveal">
       <div class="place" id="place"></div>
       <div class="grid">
         <div class="item"><div class="k">海拔</div><div class="v" id="elev"></div></div>
@@ -151,18 +230,16 @@
       <div id="goAdv" class="advice"></div>
       <div id="clothAdv" class="advice"></div>
     </div>
-    <div class="card">
-      <div class="forecast-title">过去 3 天天气回顾</div>
+    <div class="card reveal">
+      <div class="card-title">过去 3 天回顾</div>
       <div id="past" class="forecast"></div>
     </div>
-    <div class="card">
-      <div class="forecast-title">未来 3 天预报</div>
+    <div class="card reveal">
+      <div class="card-title">未来 3 天预报</div>
       <div id="forecast" class="forecast"></div>
     </div>
   </div>
-  <div style="margin-top:16px;font-size:12px;color:var(--muted)">
-    数据来源：Open-Meteo（免费、无需密钥）
-  </div>
+  <div class="foot">数据来源：Open-Meteo（免费、无需密钥）</div>
 </div>
 <script>
   const WMO = {
@@ -179,21 +256,31 @@
   };
   const DAY_LABELS = { "-3":"大前天", "-2":"前天", "-1":"昨天", "0":"今天", "1":"明天", "2":"后天", "3":"大后天" };
 
+  // 图标：一律内联 SVG，跟随主题色，不用 emoji
+  const ICON = {
+    moon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
+    sun: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+    alert: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>',
+    rain: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 15a4 4 0 0 0-1.5-7.7A6 6 0 0 0 4 8.5 3.5 3.5 0 0 0 4.5 15"/><path d="M8 18v2M12 18v2M16 18v2"/></svg>'
+  };
+
   const $ = id => document.getElementById(id);
   const btn = $("go");
   btn.addEventListener("click", run);
   $("city").addEventListener("keydown", e => { if(e.key==="Enter") run(); });
 
-  // 主题：根据当前 data-theme 更新按钮文案
-  (function syncToggle(){
+  // 主题：根据当前 data-theme 更新按钮图标与文案
+  function syncToggle(){
     const cur = document.documentElement.getAttribute("data-theme") || "light";
-    $("themeBtn").textContent = cur === "dark" ? "☀️ 浅色" : "🌙 深色";
-  })();
+    const isDark = cur === "dark";
+    $("themeBtn").innerHTML = (isDark ? ICON.sun : ICON.moon) + "<span>" + (isDark ? "浅色" : "深色") + "</span>";
+  }
+  syncToggle();
   $("themeBtn").addEventListener("click", () => {
     const cur = document.documentElement.getAttribute("data-theme") || "light";
     const next = cur === "dark" ? "light" : "dark";
     document.documentElement.setAttribute("data-theme", next);
-    $("themeBtn").textContent = next === "dark" ? "☀️ 浅色" : "🌙 深色";
+    syncToggle();
     try { localStorage.setItem("cwa-theme", next); } catch(e){}
   });
 
@@ -255,7 +342,7 @@
     const el = $("past");
     el.innerHTML = "";
     if(!daily || !daily.time || todayIdx < 3) {
-      el.innerHTML = '<div class="day" style="grid-column:1/-1">暂无历史数据</div>';
+      el.innerHTML = '<div class="empty">暂无历史数据</div>';
       return;
     }
     for(let i = todayIdx - 3; i < todayIdx; i++) {
@@ -282,7 +369,7 @@
     const el = $("forecast");
     el.innerHTML = "";
     if(!daily || !daily.time || !daily.time.length) {
-      el.innerHTML = '<div class="day" style="grid-column:1/-1">暂无预报数据</div>';
+      el.innerHTML = '<div class="empty">暂无预报数据</div>';
       return;
     }
     // 未来 3 天：今天之后的 3 个索引；找不到"今天"时回退为索引 1,2,3
@@ -303,12 +390,12 @@
       if(severe) {
         const b = document.createElement("div");
         b.className = "badge sev";
-        b.textContent = "⚠️ 严重天气";
+        b.innerHTML = ICON.alert + "<span>严重天气</span>";
         day.appendChild(b);
       } else if(caution) {
         const b = document.createElement("div");
         b.className = "badge warn";
-        b.textContent = "☔ 高降水概率";
+        b.innerHTML = ICON.rain + "<span>高降水概率</span>";
         day.appendChild(b);
       }
       day.insertAdjacentHTML("beforeend", `
